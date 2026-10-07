@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="CalcInk — write math by hand, get the answer on the page. 100% on-device and offline." />
+    <meta name="theme-color" content="#f6f1e4" />
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <title>CalcInk — handwritten math calculator</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <h1 class="brand"><img src="./logo.png" alt="CalcInk" width="360" height="120" /></h1>
+        <div class="top-right">
+          <button id="btn-help" class="help-btn" aria-haspopup="dialog" aria-label="Help and shortcuts" title="Help &amp; shortcuts (?)">?</button>
+          <div class="papers" role="radiogroup" aria-label="Paper style">
+            <button class="paper-opt" data-paper="ruled" role="radio" aria-checked="true" title="Ruled notebook">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/><path d="M8 4v16" class="margin"/></svg><span>Ruled</span>
+            </button>
+            <button class="paper-opt" data-paper="grid" role="radio" aria-checked="false" title="Engineering grid paper">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg><span>Grid</span>
+            </button>
+            <button class="paper-opt" data-paper="parchment" role="radio" aria-checked="false" title="Blank parchment">
+              <svg viewBox="0 0 24 24"><path d="M6 4h10a3 3 0 013 3v10a3 3 0 01-3 3H8a2 2 0 01-2-2z"/><path d="M6 6c-1.5 0-2 .8-2 2s.5 2 2 2"/></svg><span>Parchment</span>
+            </button>
+          </div>
+          <div class="chips">
+            <span id="chip-model" class="chip" data-state="loading">Loading on-device model…</span>
+            <span id="chip-net" class="chip" data-state="online">Online</span>
+            <button id="chip-fps" class="chip chip-fps" data-state="good" aria-pressed="false" title="Live frame rate. Click for details (F)">… fps</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="paper-wrap">
+          <div id="paper" class="paper" aria-label="Handwriting canvas">
+            <div id="hint" class="hint" aria-hidden="true">
+              <span>Write an equation ending with <b>=</b></span>
+              <small>e.g. 18 + 4 × 3 =  ·  or  = 17 × 8  for the answer on the left</small>
+            </div>
+          </div>
+
+          <nav class="toolbar" aria-label="Drawing tools">
+            <div class="group" role="radiogroup" aria-label="Tool">
+              <button class="tool" data-tool="pen" role="radio" aria-checked="true" title="Pen (P)">
+                <svg viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg><span>Pen</span>
+              </button>
+              <button class="tool" data-tool="stroke-eraser" role="radio" aria-checked="false" title="Eraser (E)">
+                <svg viewBox="0 0 24 24"><path d="M7 20h11"/><path d="M5 14l8-9a2 2 0 013 0l3 3a2 2 0 010 3l-6 6H9z"/></svg><span>Eraser</span>
+              </button>
+              <button class="tool" data-tool="pan" role="radio" aria-checked="false" title="Pan (H)">
+                <svg viewBox="0 0 24 24"><path d="M10.5 4.5a2 2 0 0 0-4 0v9M14 6.5a2 2 0 0 0-4 0v7M17.5 8.5a2 2 0 0 0-4 0v5M21 10.5a2 2 0 0 0-4 0v4M6.5 13.5v-2M6.5 11.5a2 2 0 0 0-4 0v7c0 3 2 5 6 5h5c4 0 6-2 6-5v-8"/></svg><span>Pan</span>
+              </button>
+            </div>
+            <div class="group note-group" style="display: flex; align-items: center; padding-left: 10px; font-size: 11px; color: var(--muted); opacity: 0.8; margin-right: auto;">
+              *Scribble to erase
+            </div>
+            <div class="group">
+              <button id="btn-undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>
+              <button id="btn-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13"/></svg></button>
+              <button id="btn-clear" title="Clear all (Ctrl+L)" aria-label="Clear canvas"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>
+            </div>
+            <label class="width" title="Stroke width">
+              <span class="dot" id="width-dot"></span>
+              <input id="width" type="range" min="2" max="14" step="1" value="4" aria-label="Stroke width" />
+            </label>
+            <div class="group swatches" role="radiogroup" aria-label="Ink colour">
+              <button class="swatch" data-color="ink" role="radio" aria-checked="true" title="Black (1)" aria-label="Black ink"></button>
+              <button class="swatch" data-color="blue" role="radio" aria-checked="false" title="Blue (2)" aria-label="Blue ink"></button>
+              <button class="swatch" data-color="green" role="radio" aria-checked="false" title="Green (3)" aria-label="Green ink"></button>
+              <button class="swatch" data-color="red" role="radio" aria-checked="false" title="Red (4)" aria-label="Red ink"></button>
+              <button class="swatch" data-color="purple" role="radio" aria-checked="false" title="Purple (5)" aria-label="Purple ink"></button>
+            </div>
+            <div class="group">
+              <button id="btn-sound" aria-pressed="false" title="Sound feedback" aria-label="Sound feedback"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6"/></svg></button>
+              <button id="btn-export" title="Save as PNG" aria-label="Save as PNG"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+            </div>
+          </nav>
+
+          <button id="btn-reading" class="reading-toggle" aria-expanded="false" aria-controls="reading" title="What I read (R)" aria-label="Show what I read">
+            <svg viewBox="0 0 24 24"><path d="M14 7l-5 5 5 5"/><path d="M19 5v14"/></svg>
+          </button>
+
+          <aside id="reading" class="reading" aria-live="polite" aria-label="Side Panel" data-open="false">
+            <div class="tabs" style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+              <button id="tab-eq" class="tab active" style="background: none; border: none; font: 600 16px Fraunces, serif; cursor: pointer; color: var(--text);">Equations</button>
+              <button id="tab-hist" class="tab" style="background: none; border: none; font: 600 16px Fraunces, serif; cursor: pointer; color: var(--muted);">History</button>
+            </div>
+            
+            <div id="panel-eq" class="panel-content">
+              <ul id="reading-list"></ul>
+              <p id="reading-empty" class="muted">Equations you write appear here with how confident the model is.</p>
+              <p class="tips muted">Tips: scribble over ink to erase it · write <b>= 17×8</b> to get the answer on the left · click the <b>fps</b> badge (or <kbd>F</kbd>) for frame-rate details · everything runs in your browser.</p>
+            </div>
+
+            <div id="panel-hist" class="panel-content" style="display: none;">
+              <ul id="history-list"></ul>
+              <p id="history-empty" class="muted">Past calculations will appear here.</p>
+            </div>
+          </aside>
+        </section>
+
+      </main>
+    </div>
+    
+    <dialog id="help" class="help" aria-labelledby="help-title">
+      <header class="help-head">
+        <h2 id="help-title">How CalcInk works</h2>
+        <button id="btn-help-close" class="help-close" aria-label="Close help" title="Close (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </header>
+      <div class="help-body">
+        <section>
+          <h3>Writing</h3>
+          <ul class="help-list">
+            <li>Write like on paper and end with <b>=</b> (e.g. <code>18 + 4 × 3 =</code>) - the answer appears to the right of the equals sign.</li>
+            <li>Start with <b>=</b> instead (<code>= 17 × 8</code>) to get the answer on the <b>left</b>.</li>
+            <li>Write an answer yourself (<code>2 + 2 = 4</code>) and CalcInk checks it with ✓ or ✗.</li>
+            <li>Edit freely: erase a digit or write a new one and the answer updates. Division by zero shows <b>Undefined</b>; a <b>?</b> after an answer means the model was unsure - rewrite that symbol.</li>
+            <li>Scribble back and forth over ink to erase it. Ink colour doesn't matter: <span class="rainbow">2 + 3 =</span> in different colours is read the same.</li>
+          </ul>
+        </section>
+        <section>
+          <h3>The model</h3>
+          <p>Handwriting is recognised <b>entirely in your browser</b> - no cloud APIs, and it works offline once loaded. Nothing was trained from scratch; two existing open-source models run in a Web Worker so drawing stays at 60 fps:</p>
+          <ul class="help-list">
+            <li><b>Symbol classifier</b> - a 16-class CNN (digits, + − × ÷ . =) from <i>Math_Symbols_Classify</i> (MIT), converted to ONNX.</li>
+            <li><b>MNIST digit CNN</b> - from the ONNX Model Zoo; decides <i>which</i> digit, averaged over 9 renderings of the same ink.</li>
+            <li>A <b>shape prior</b> (stroke count, flatness, size) breaks ties, e.g. "−" is one flat stroke and "=" is two.</li>
+          </ul>
+          <p>Strokes are split into rows, then symbols, then the recognised text is evaluated by a safe BODMAS/PEMDAS parser (no <code>eval</code>) that handles decimals and negative numbers.</p>
+        </section>
+        <section>
+          <h3>Keyboard shortcuts</h3>
+          <dl class="keys">
+            <div><dt><kbd>P</kbd></dt><dd>Pen</dd></div>
+            <div><dt><kbd>E</kbd></dt><dd>Eraser</dd></div>
+            <div><dt><kbd>H</kbd></dt><dd>Pan</dd></div>
+            <div><dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>Ink colour: black, blue, green, red, purple</dd></div>
+            <div><dt><kbd>Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd></div>
+            <div><dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></dt><dd>Redo</dd></div>
+            <div><dt><kbd>Ctrl</kbd> <kbd>L</kbd></dt><dd>Clear everything (undo brings it back)</dd></div>
+            <div><dt><kbd>R</kbd></dt><dd>Show / hide “What I read”</dd></div>
+            <div><dt><kbd>F</kbd></dt><dd>Frame-rate details</dd></div>
+            <div><dt><kbd>?</kbd></dt><dd>This help</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>Close panels</dd></div>
+          </dl>
+        </section>
+      </div>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "calcink",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CalcInk - on-device handwritten math calculator (100% client-side, offline)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run --exclude tests/recognition.eval.test.ts",
+    "test:eval": "vitest run tests/recognition.eval.test.ts",
+    "test:e2e": "playwright test",
+    "icons": "python3 tools/make_icons.py"
+  },
+  "dependencies": {
+    "onnxruntime-web": "^1.30.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "hersheytext": "^2.0.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
